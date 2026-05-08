@@ -14,7 +14,7 @@ app.use(cors({ origin: "*" }));
 app.use(express.static(path.join(__dirname)));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "scaleup.html"));
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 app.post("/api/analyze", async (req, res) => {
