@@ -32,7 +32,7 @@ Target Role: ${role}
 Resume:
 ${resume}
 
-Identify the key skills required for this role. Then, compare them against the resume.
+Identify the key skills required for this role. Then, compare them against the resume. Be extremely concise.
 Return ONLY a JSON object with the following structure:
 {
   "matched": ["skill1", "skill2", ...],
@@ -44,10 +44,11 @@ Return ONLY a JSON object with the following structure:
   "total": <number_of_total_skills_required_for_this_role>
 }
 
+Limit the roadmap to a maximum of 3 weeks. Keep the content very brief.
 Make sure the output is pure JSON. Do not include markdown formatting like \`\`\`json.`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-flash-latest',
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -85,4 +86,7 @@ Make sure the output is pure JSON. Do not include markdown formatting like \`\`\
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("Server running on http://localhost:" + PORT));
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => console.log("Server running on http://localhost:" + PORT));
+}
+module.exports = app;

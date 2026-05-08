@@ -167,7 +167,7 @@ canvas#hc{position:absolute;inset:0;width:100%;height:100%;}
 .uz-title{font-family:'Unbounded',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em;margin-bottom:8px;}
 .uz-sub{font-size:11px;letter-spacing:.1em;opacity:.35;margin-bottom:28px;}
 .uz-btn{display:inline-block;padding:14px 40px;background:var(--acc);color:#000;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.25em;text-transform:uppercase;font-weight:500;cursor:none;position:relative;}
-#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;}
+#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;z-index:10;}
 
 /* Role Input */
 .role-wrap{margin-top:20px;position:relative;}
@@ -748,13 +748,12 @@ async function processFile(file){
 
 function finishExtraction(text){
   procLoader.style.display='none';
-  resumeBox.style.display='block';
   roleInput.style.display='block';
   analyzeBtn.style.display='block';
   resumeBox.value=text;
   analyzeBtn.disabled=false;
   // animate them in
-  gsap.fromTo([resumeBox,roleInput,analyzeBtn],{opacity:0,y:20},{opacity:1,y:0,duration:.7,stagger:.1,ease:'power3.out'});
+  gsap.fromTo([roleInput,analyzeBtn],{opacity:0,y:20},{opacity:1,y:0,duration:.7,stagger:.1,ease:'power3.out'});
 }
 
 async function analyze(){
@@ -770,8 +769,9 @@ async function analyze(){
     const data=await res.json();
     
     if (data.error) {
-      procStatus.innerText = 'Analysis Failed: ' + data.error;
+      procLoader.style.display='none';
       analyzeBtn.disabled = false;
+      document.getElementById('output').innerHTML = `<div style="color:var(--acc2);text-align:center;padding:40px;background:var(--card);border:1px solid var(--border);margin-top:20px;">Analysis Failed: ${data.error}<br>Please check your server logs or API key.</div>`;
       return;
     }
     
