@@ -1,19 +1,17 @@
 {
   "version": 2,
-  "builds": [
+  "routes": [
     {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/analyze",
-      "destination": "/server.js"
+      "src": "/analyze",
+      "dest": "/api/analyze.js"
     },
     {
-      "source": "/",
-      "destination": "/scaleup.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/scaleup.html"
     }
   ]
 }
+
