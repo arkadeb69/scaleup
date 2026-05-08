@@ -17,7 +17,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "scaleup.html"));
 });
 
-app.post("/analyze", async (req, res) => {
+app.post("/api/analyze", async (req, res) => {
   let { resume, role } = req.body;
 
   if (!resume || !role) {
