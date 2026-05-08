@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAREERX — AI Career Intelligence</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Unbounded:wght@200;400;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#04040a;
+  --bg2:#07070f;
+  --acc:#b8ff4f;
+  --acc2:#ff4f4f;
+  --acc3:#4fffb8;
+  --wh:#f0f0e8;
+  --mu:rgba(240,240,232,0.35);
+  --card:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.07);
+}
+html{scroll-behavior:auto;}
+::-webkit-scrollbar{display:none;}
+body{background:var(--bg);color:var(--wh);overflow-x:hidden;font-family:'DM Mono',monospace;cursor:none;}
+
+/* ─── CURSOR ─── */
+#cur{width:14px;height:14px;border-radius:50%;background:var(--acc);position:fixed;top:0;left:0;z-index:99999;pointer-events:none;mix-blend-mode:exclusion;transition:width .2s,height .2s,border-radius .2s;}
+#cur-ring{width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(184,255,79,.45);position:fixed;top:0;left:0;z-index:99998;pointer-events:none;}
+body:has(button:hover) #cur,body:has(.upload-zone:hover) #cur,body:has(.feat-card:hover) #cur{width:56px;height:56px;background:var(--acc2);border-radius:6px;}
+
+/* ─── NOISE ─── */
+#noise{position:fixed;inset:0;z-index:9990;pointer-events:none;opacity:.025;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");background-size:300px;}
+
+/* ─── SCROLL LINE ─── */
+#sline-wrap{position:fixed;right:22px;top:0;width:2px;height:100vh;z-index:9950;pointer-events:none;background:rgba(255,255,255,.05);}
+#sline{width:100%;height:0%;background:linear-gradient(to bottom,var(--acc2),var(--acc));box-shadow:0 0 12px var(--acc);transition:height .05s linear;}
+
+/* ─── PROGRESS ─── */
+#progress{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(90deg,var(--acc2),var(--acc));z-index:9999;width:0%;box-shadow:0 0 10px var(--acc);}
+
+/* ─── NAV ─── */
+nav{position:fixed;top:0;left:0;right:0;z-index:900;display:flex;justify-content:space-between;align-items:center;padding:24px 48px;background:linear-gradient(to bottom,rgba(4,4,10,.9),transparent);backdrop-filter:blur(12px);}
+.nav-logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:18px;letter-spacing:-.02em;color:var(--acc);}
+.nav-tag{font-size:9px;letter-spacing:.4em;text-transform:uppercase;opacity:.35;}
+.nav-cta{padding:10px 28px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.25em;text-transform:uppercase;cursor:none;transition:background .3s,color .3s;border-radius:2px;}
+.nav-cta:hover{background:var(--acc);color:#000;}
+
+/* ─── LOADER ─── */
+#loader{position:fixed;inset:0;z-index:99999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;}
+.ld-w{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(60px,12vw,150px);line-height:.85;letter-spacing:-.04em;text-transform:uppercase;overflow:hidden;}
+.ld-w span{display:block;transform:translateY(110%);}
+.ld-w .acc{color:var(--acc);}
+.ld-sub{margin-top:24px;font-size:10px;letter-spacing:.5em;opacity:0;text-transform:uppercase;color:var(--mu);}
+.ld-bar{width:260px;height:1.5px;background:rgba(255,255,255,.08);margin-top:44px;overflow:hidden;}
+.ld-fill{width:0%;height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));}
+.ld-btn{margin-top:36px;opacity:0;padding:16px 52px;border:1.5px solid var(--acc);background:transparent;color:var(--acc);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.35em;text-transform:uppercase;cursor:none;position:relative;overflow:hidden;transition:color .4s;border-radius:2px;}
+.ld-btn::before{content:'';position:absolute;inset:0;background:var(--acc);transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.76,0,.24,1);}
+.ld-btn:hover::before{transform:scaleX(1);}
+.ld-btn:hover{color:#000;}
+.ld-btn span{position:relative;z-index:1;}
+
+/* ─── HERO ─── */
+.hero{height:100vh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 48px 64px;position:relative;overflow:hidden;}
+canvas#hc{position:absolute;inset:0;width:100%;height:100%;}
+.hero-mesh{position:absolute;inset:0;background:radial-gradient(ellipse 70% 55% at 70% 35%,rgba(184,255,79,.12),transparent),radial-gradient(ellipse 50% 40% at 15% 75%,rgba(255,79,79,.08),transparent);animation:hmesh 12s ease-in-out infinite alternate;}
+@keyframes hmesh{0%{opacity:1;}100%{opacity:.6;transform:scale(1.05);}}
+.hero-eyebrow{position:absolute;top:50%;left:48px;transform:translateY(-50%);writing-mode:vertical-rl;font-size:9px;letter-spacing:.5em;opacity:.25;text-transform:uppercase;z-index:2;}
+.hero-num{position:absolute;top:50%;right:56px;transform:translateY(-50%);font-size:9px;letter-spacing:.3em;opacity:.2;z-index:2;}
+.h-wrap{position:relative;z-index:2;overflow:hidden;}
+.h-title{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(64px,13vw,180px);line-height:.82;letter-spacing:-.04em;text-transform:uppercase;transform:translateY(110%);}
+.h-title .lime{color:var(--acc);}
+.h-title .coral{color:var(--acc2);}
+.h-sub{position:relative;z-index:2;margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end;}
+.h-tag{font-size:clamp(10px,1.1vw,13px);letter-spacing:.2em;opacity:0;text-transform:uppercase;line-height:1.9;max-width:380px;}
+.h-hint{opacity:0;font-size:9px;letter-spacing:.35em;text-transform:uppercase;display:flex;align-items:center;gap:14px;}
+.h-hint::before{content:'';display:block;width:44px;height:1px;background:var(--acc);}
+
+/* ─── MARQUEE ─── */
+.mq{background:var(--acc);padding:14px 0;overflow:hidden;}
+.mq-track{display:flex;gap:60px;white-space:nowrap;animation:mqa 10s linear infinite;}
+@keyframes mqa{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
+.mq-item{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.15em;color:#000;display:flex;align-items:center;gap:60px;}
+.mq-item::after{content:'✦';font-size:13px;}
+
+/* ─── WHAT IT DOES ─── */
+.what{padding:140px 48px;position:relative;overflow:hidden;}
+.what-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+.w-label{font-size:9px;letter-spacing:.45em;text-transform:uppercase;opacity:.3;margin-bottom:20px;}
+.w-head{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(32px,4.5vw,62px);line-height:1;letter-spacing:-.03em;}
+.w-head em{font-style:normal;color:var(--acc);}
+.w-body{font-size:13px;line-height:2.1;opacity:.45;margin-top:24px;}
+.w-body strong{color:var(--wh);opacity:1;font-weight:500;}
+.what-graphic{position:relative;height:380px;display:flex;align-items:center;justify-content:center;}
+.wg-ring{position:absolute;border-radius:50%;border:1px solid var(--border);animation:spin 20s linear infinite;}
+.wg-ring:nth-child(1){width:300px;height:300px;}
+.wg-ring:nth-child(2){width:220px;height:220px;animation-duration:14s;animation-direction:reverse;border-color:rgba(184,255,79,.2);}
+.wg-ring:nth-child(3){width:140px;height:140px;animation-duration:8s;}
+@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}
+.wg-center{width:80px;height:80px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-weight:900;font-size:9px;color:#000;letter-spacing:.1em;text-align:center;position:relative;z-index:2;box-shadow:0 0 60px rgba(184,255,79,.4);}
+.wg-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--acc2);}
+.wg-dot:nth-child(4){top:0;left:50%;transform:translateX(-50%);}
+.wg-dot:nth-child(5){bottom:0;left:50%;transform:translateX(-50%);background:var(--acc);}
+.wg-dot:nth-child(6){left:0;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.6);}
+.bg-word{position:absolute;font-family:'Unbounded',sans-serif;font-weight:900;font-size:22vw;color:rgba(255,255,255,.018);pointer-events:none;top:50%;right:-5vw;transform:translateY(-50%);line-height:1;}
+
+/* ─── FEATURES ─── */
+.features{padding:80px 48px 140px;}
+.feat-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:64px;}
+.feat-label{font-size:9px;letter-spacing:.45em;text-transform:uppercase;opacity:.3;}
+.feat-title{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(30px,4.5vw,58px);letter-spacing:-.03em;line-height:1;}
+.feat-count{font-size:11px;letter-spacing:.2em;opacity:.2;align-self:flex-start;}
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.feat-card{background:var(--card);border:1px solid var(--border);padding:36px 28px;cursor:none;position:relative;overflow:hidden;transition:border-color .4s;}
+.feat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(184,255,79,.06),transparent);opacity:0;transition:opacity .4s;}
+.feat-card:hover{border-color:rgba(184,255,79,.25);}
+.feat-card:hover::before{opacity:1;}
+.feat-icon{font-size:28px;margin-bottom:20px;display:block;}
+.feat-num{font-size:9px;letter-spacing:.4em;opacity:.2;margin-bottom:12px;text-transform:uppercase;}
+.feat-name{font-family:'Unbounded',sans-serif;font-weight:700;font-size:clamp(16px,2vw,24px);line-height:1;letter-spacing:-.02em;margin-bottom:14px;}
+.feat-desc{font-size:11px;line-height:1.9;opacity:.4;}
+
+/* ─── HOW IT WORKS ─── */
+.how{padding:120px 48px;background:rgba(255,255,255,.015);position:relative;overflow:hidden;}
+.how-title{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(36px,6vw,80px);letter-spacing:-.04em;text-align:center;margin-bottom:80px;}
+.how-title span{color:var(--acc);}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
+.step{background:var(--bg);padding:48px 32px;position:relative;}
+.step-num{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(48px,6vw,80px);color:rgba(255,255,255,.04);line-height:1;margin-bottom:20px;}
+.step-icon{font-size:32px;margin-bottom:16px;display:block;}
+.step-name{font-family:'Unbounded',sans-serif;font-weight:700;font-size:18px;letter-spacing:-.02em;margin-bottom:10px;}
+.step-desc{font-size:11px;line-height:1.9;opacity:.38;}
+.step::after{content:'→';position:absolute;right:-18px;top:50%;transform:translateY(-50%);font-size:24px;opacity:.2;z-index:2;}
+.step:last-child::after{display:none;}
+
+/* ─── KINETIC ─── */
+.kinetic{padding:100px 0;overflow:hidden;display:flex;flex-direction:column;gap:16px;}
+.k-t{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(60px,12vw,160px);white-space:nowrap;line-height:.8;color:transparent;-webkit-text-stroke:1.5px rgba(255,255,255,.07);text-transform:uppercase;}
+.k-t.kl{color:var(--acc2);-webkit-text-stroke:0;}
+.k-t.kg{color:var(--acc);-webkit-text-stroke:0;}
+
+/* ─── STATS ─── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);}
+.stat{background:var(--bg);padding:48px 36px;}
+.st-num{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(40px,5.5vw,72px);letter-spacing:-.04em;line-height:1;background:linear-gradient(135deg,var(--wh),var(--acc));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.st-lbl{font-size:9px;letter-spacing:.35em;opacity:.28;text-transform:uppercase;margin-top:12px;}
+
+/* ─── UPLOAD SECTION (THE APP) ─── */
+.upload-sec{padding:140px 48px;position:relative;overflow:hidden;}
+.upload-inner{max-width:800px;margin:0 auto;}
+.up-eyebrow{font-size:9px;letter-spacing:.5em;text-transform:uppercase;opacity:.3;margin-bottom:20px;text-align:center;}
+.up-title{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(36px,6vw,80px);letter-spacing:-.04em;text-align:center;line-height:.9;margin-bottom:60px;}
+.up-title span{color:var(--acc);}
+
+/* Upload Zone */
+.upload-zone{border:1.5px dashed rgba(184,255,79,.3);padding:60px 40px;text-align:center;cursor:none;position:relative;overflow:hidden;transition:border-color .4s,background .4s;background:var(--card);}
+.upload-zone:hover{border-color:var(--acc);background:rgba(184,255,79,.04);}
+.upload-zone.dragging{border-color:var(--acc);background:rgba(184,255,79,.08);}
+.uz-icon{font-size:48px;display:block;margin-bottom:16px;opacity:.6;}
+.uz-title{font-family:'Unbounded',sans-serif;font-weight:700;font-size:24px;letter-spacing:-.02em;margin-bottom:8px;}
+.uz-sub{font-size:11px;letter-spacing:.1em;opacity:.35;margin-bottom:28px;}
+.uz-btn{display:inline-block;padding:14px 40px;background:var(--acc);color:#000;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.25em;text-transform:uppercase;font-weight:500;cursor:none;position:relative;}
+#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;}
+
+/* Role Input */
+.role-wrap{margin-top:20px;position:relative;}
+.role-input{width:100%;padding:18px 20px;background:var(--card);border:1px solid var(--border);color:var(--wh);font-family:'DM Mono',monospace;font-size:13px;outline:none;transition:border-color .3s;display:none;}
+.role-input:focus{border-color:rgba(184,255,79,.4);}
+.role-input::placeholder{opacity:.3;letter-spacing:.1em;}
+
+/* Textarea */
+.resume-box{width:100%;padding:16px 20px;background:var(--card);border:1px solid var(--border);color:var(--wh);font-family:'DM Mono',monospace;font-size:11px;outline:none;resize:vertical;min-height:140px;display:none;margin-top:16px;transition:border-color .3s;line-height:1.8;opacity:.6;}
+.resume-box:focus{border-color:rgba(184,255,79,.3);}
+
+/* Analyze Button */
+.analyze-btn{width:100%;margin-top:20px;padding:20px;background:var(--acc);color:#000;font-family:'Unbounded',sans-serif;font-weight:700;font-size:16px;letter-spacing:.05em;text-transform:uppercase;cursor:none;border:none;position:relative;overflow:hidden;transition:transform .3s;display:none;}
+.analyze-btn::after{content:'→';margin-left:12px;}
+.analyze-btn:hover{transform:scale(.99);}
+.analyze-btn:disabled{opacity:.35;pointer-events:none;}
+
+/* Loader Pill */
+.proc-loader{display:none;margin-top:20px;text-align:center;}
+.proc-spinner{width:36px;height:36px;border:3px solid rgba(184,255,79,.15);border-top:3px solid var(--acc);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 10px;}
+@keyframes sp{100%{transform:rotate(360deg);}}
+.proc-status{font-size:10px;letter-spacing:.3em;opacity:.5;text-transform:uppercase;}
+
+/* ─── RESULTS ─── */
+#output{padding:0 48px 100px;max-width:848px;margin:0 auto;}
+.result-card{background:var(--card);border:1px solid var(--border);padding:0;overflow:hidden;}
+.rc-header{padding:36px 40px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.rc-score-label{font-size:9px;letter-spacing:.4em;text-transform:uppercase;opacity:.35;}
+.rc-score-num{font-family:'Unbounded',sans-serif;font-weight:900;font-size:64px;letter-spacing:-.04em;line-height:1;color:var(--acc);}
+.rc-score-pct{font-size:18px;color:var(--acc2);}
+.rc-score-sub{font-size:10px;letter-spacing:.2em;opacity:.3;text-transform:uppercase;margin-top:4px;}
+.rc-bar-wrap{height:3px;background:rgba(255,255,255,.06);margin:0 40px;}
+.rc-bar-fill{height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));transition:width 1.5s cubic-bezier(.25,.46,.45,.94);width:0%;}
+.rc-body{padding:36px 40px;display:grid;grid-template-columns:1fr 1fr;gap:36px;}
+.rc-section-title{font-size:9px;letter-spacing:.4em;text-transform:uppercase;opacity:.35;margin-bottom:16px;}
+.rc-tags{display:flex;flex-wrap:wrap;gap:8px;}
+.rc-tag{padding:7px 14px;font-size:11px;letter-spacing:.08em;}
+.rc-tag.match{background:rgba(184,255,79,.12);color:var(--acc);border:1px solid rgba(184,255,79,.2);}
+.rc-tag.miss{background:rgba(255,79,79,.1);color:var(--acc2);border:1px solid rgba(255,79,79,.18);}
+.rc-roadmap{padding:36px 40px;border-top:1px solid var(--border);}
+.rm-title{font-family:'Unbounded',sans-serif;font-weight:700;font-size:20px;letter-spacing:-.02em;margin-bottom:24px;}
+.rm-week{display:flex;gap:20px;padding:18px 0;border-bottom:1px solid var(--border);align-items:flex-start;}
+.rm-week:last-child{border-bottom:none;}
+.rm-wnum{font-family:'Unbounded',sans-serif;font-weight:900;font-size:32px;color:rgba(255,255,255,.06);letter-spacing:-.04em;line-height:1;flex-shrink:0;width:50px;}
+.rm-wcontent{font-size:12px;line-height:1.8;opacity:.55;padding-top:6px;}
+
+/* ─── TESTIMONIALS ─── */
+.testimonials{padding:120px 48px;overflow:hidden;position:relative;}
+.test-hdr{text-align:center;margin-bottom:64px;}
+.test-label{font-size:9px;letter-spacing:.45em;text-transform:uppercase;opacity:.28;margin-bottom:16px;}
+.test-title{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(32px,5vw,64px);letter-spacing:-.04em;}
+.test-title span{color:var(--acc);}
+.test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.test-card{background:var(--card);border:1px solid var(--border);padding:32px 28px;}
+.test-quote{font-size:13px;line-height:1.9;opacity:.5;margin-bottom:24px;font-style:italic;}
+.test-author{display:flex;align-items:center;gap:12px;}
+.test-avatar{width:36px;height:36px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-weight:900;font-size:12px;color:#000;flex-shrink:0;}
+.test-name{font-size:11px;letter-spacing:.1em;font-weight:500;}
+.test-role{font-size:9px;letter-spacing:.25em;opacity:.3;text-transform:uppercase;margin-top:2px;}
+
+/* ─── FINAL CTA ─── */
+.final-cta{min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:120px 48px;position:relative;overflow:hidden;text-align:center;}
+.fc-glow{position:absolute;width:70vw;height:70vw;border-radius:50%;background:radial-gradient(circle,rgba(184,255,79,.15),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);filter:blur(80px);animation:fcbr 7s ease-in-out infinite;}
+@keyframes fcbr{0%,100%{transform:translate(-50%,-50%) scale(1);}50%{transform:translate(-50%,-50%) scale(1.1);}}
+.fc-label{font-size:9px;letter-spacing:.5em;text-transform:uppercase;opacity:.3;margin-bottom:28px;}
+.fc-title{font-family:'Unbounded',sans-serif;font-weight:900;font-size:clamp(52px,10vw,140px);letter-spacing:-.04em;line-height:.85;text-transform:uppercase;position:relative;z-index:1;}
+.fc-title span{display:block;}
+.fc-title .green{color:var(--acc);}
+.fc-sub{font-size:12px;letter-spacing:.2em;opacity:.35;margin-top:24px;text-transform:uppercase;position:relative;z-index:1;}
+.fc-btn{margin-top:48px;padding:20px 60px;background:var(--acc);color:#000;font-family:'Unbounded',sans-serif;font-weight:700;font-size:14px;letter-spacing:.04em;text-transform:uppercase;border:none;cursor:none;position:relative;z-index:1;transition:transform .3s;}
+.fc-btn:hover{transform:scale(.98);}
+
+/* ─── FOOTER ─── */
+footer{padding:48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);}
+.ft-logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:16px;color:var(--acc);}
+.ft-copy{font-size:9px;letter-spacing:.3em;opacity:.2;text-transform:uppercase;}
+
+/* ─── REVEAL UTIL ─── */
+.reveal{opacity:0;transform:translateY(40px);}
+.reveal-left{opacity:0;transform:translateX(-60px);}
+.reveal-right{opacity:0;transform:translateX(60px);}
+
+/* ─── RESPONSIVE ─── */
+@media(max-width:900px){
+  nav{padding:20px 24px;}
+  .hero{padding:0 24px 48px;}
+  .hero-eyebrow,.hero-num,.nav-tag{display:none;}
+  .h-title{font-size:clamp(56px,18vw,100px);}
+  .what,.features,.how,.upload-sec,.testimonials,.final-cta{padding:80px 24px;}
+  .what-grid,.feat-grid,.test-grid{grid-template-columns:1fr;gap:32px;}
+  .steps{grid-template-columns:1fr 1fr;}
+  .stats{grid-template-columns:1fr 1fr;}
+  #output{padding:0 24px 80px;}
+  .rc-body{grid-template-columns:1fr;}
+  footer{padding:32px 24px;flex-direction:column;gap:16px;text-align:center;}
+}
+</style>
+</head>
+<body>
+
+<div id="noise"></div>
+<div id="cur"></div>
+<div id="cur-ring"></div>
+<div id="sline-wrap"><div id="sline"></div></div>
+<div id="progress"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="ld-w"><span>CAREER</span></div>
+  <div class="ld-w"><span><span class="acc">X</span></span></div>
+  <p class="ld-sub" id="lsub">AI Career Intelligence — 2026</p>
+  <div class="ld-bar"><div class="ld-fill" id="ldFill"></div></div>
+  <button class="ld-btn" id="ldBtn"><span>Launch Experience</span></button>
+</div>
+
+<!-- NAV -->
+<nav id="mainNav" style="opacity:0">
+  <div class="nav-logo">CAREERX</div>
+  <div class="nav-tag">AI Career Intelligence</div>
+  <button class="nav-cta" onclick="document.querySelector('.upload-sec').scrollIntoView({behavior:'smooth'})">Analyze Now</button>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+  <div style="position:absolute;inset:0;z-index:0;">
+    <div class="hero-mesh"></div>
+    <canvas id="hc"></canvas>
+  </div>
+  <div class="hero-eyebrow">AI Resume Intelligence — 2026</div>
+  <div class="hero-num">01 / 06</div>
+  <div class="h-wrap">
+    <h1 class="h-title" id="heroTitle">
+      YOUR<br>
+      CAREER<br>
+      <span class="lime">DECODED.</span>
+    </h1>
+  </div>
+  <div class="h-sub">
+    <p class="h-tag">Upload your resume. Get your score.<br>Land the role. No excuses.</p>
+    <div class="h-hint">Scroll to Begin</div>
+  </div>
+</section>
+
+<!-- ══ MARQUEE ══ -->
+<div class="mq">
+  <div class="mq-track">
+    <div class="mq-item">Resume Analysis</div>
+    <div class="mq-item">Skill Gap Mapping</div>
+    <div class="mq-item">AI Roadmap</div>
+    <div class="mq-item">Match Score</div>
+    <div class="mq-item">Career Intelligence</div>
+    <div class="mq-item">Resume Analysis</div>
+    <div class="mq-item">Skill Gap Mapping</div>
+    <div class="mq-item">AI Roadmap</div>
+    <div class="mq-item">Match Score</div>
+    <div class="mq-item">Career Intelligence</div>
+    <div class="mq-item">Resume Analysis</div>
+    <div class="mq-item">Skill Gap Mapping</div>
+    <div class="mq-item">AI Roadmap</div>
+    <div class="mq-item">Match Score</div>
+    <div class="mq-item">Career Intelligence</div>
+  </div>
+</div>
+
+<!-- ══ WHAT IT DOES ══ -->
+<section class="what" id="whatSec">
+  <div class="bg-word">AI</div>
+  <div class="what-grid">
+    <div>
+      <div class="w-label reveal">What We Do</div>
+      <h2 class="w-head reveal">Your resume.<br>Brutally <em>honest.</em></h2>
+      <p class="w-body reveal"><strong>Stop guessing why you're getting rejected.</strong> CAREERX uses AI to dissect your resume against any job role — exposing exactly what's missing, what's strong, and what you need to learn next.<br><br>No fluff. No generic advice. <strong>Pure intelligence.</strong></p>
+    </div>
+    <div class="what-graphic reveal-right">
+      <div class="wg-ring"></div>
+      <div class="wg-ring"></div>
+      <div class="wg-ring"></div>
+      <div class="wg-dot"></div>
+      <div class="wg-dot"></div>
+      <div class="wg-dot"></div>
+      <div class="wg-center">AI<br>ENGINE</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FEATURES ══ -->
+<section class="features" id="featSec">
+  <div class="feat-hdr">
+    <div>
+      <div class="feat-label reveal">Core Features</div>
+      <h2 class="feat-title reveal">What You Get.</h2>
+    </div>
+    <div class="feat-count reveal">06 Features</div>
+  </div>
+  <div class="feat-grid">
+    <div class="feat-card reveal">
+      <span class="feat-icon">🎯</span>
+      <div class="feat-num">01</div>
+      <div class="feat-name">Match Score</div>
+      <div class="feat-desc">Instant percentage match between your resume and any job role. Know your chances before applying.</div>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">🧠</span>
+      <div class="feat-num">02</div>
+      <div class="feat-name">Skill Gap Radar</div>
+      <div class="feat-desc">Pinpoints exactly which skills are missing from your profile and how critical each one is.</div>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">🗺️</span>
+      <div class="feat-num">03</div>
+      <div class="feat-name">AI Roadmap</div>
+      <div class="feat-desc">Week-by-week learning plan tailored to close your skill gaps and make you hireable fast.</div>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">📄</span>
+      <div class="feat-num">04</div>
+      <div class="feat-name">PDF + Image Support</div>
+      <div class="feat-desc">Upload any resume format — PDF or image. OCR technology extracts text automatically.</div>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">⚡</span>
+      <div class="feat-num">05</div>
+      <div class="feat-name">Instant Results</div>
+      <div class="feat-desc">Analysis in seconds, not minutes. Get your full career intelligence report immediately.</div>
+    </div>
+    <div class="feat-card reveal">
+      <span class="feat-icon">🔒</span>
+      <div class="feat-num">06</div>
+      <div class="feat-name">Private & Secure</div>
+      <div class="feat-desc">Your resume data is never stored. Analyze with complete confidence and privacy.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="how" id="howSec">
+  <h2 class="how-title reveal">How It <span>Works.</span></h2>
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num">01</div>
+      <span class="step-icon">📤</span>
+      <div class="step-name">Upload Resume</div>
+      <div class="step-desc">Drop your PDF or image file. We extract the text instantly using AI-powered OCR.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">02</div>
+      <span class="step-icon">🎯</span>
+      <div class="step-name">Set Your Role</div>
+      <div class="step-desc">Tell us the job you're targeting. Be specific — "senior product designer at a fintech startup."</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">03</div>
+      <span class="step-icon">🤖</span>
+      <div class="step-name">AI Analyzes</div>
+      <div class="step-desc">Our model cross-references your resume against thousands of real job requirements.</div>
+    </div>
+    <div class="step reveal">
+      <div class="step-num">04</div>
+      <span class="step-icon">🚀</span>
+      <div class="step-name">Get Results</div>
+      <div class="step-desc">Receive your score, matched skills, missing skills, and a personalized weekly roadmap.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ KINETIC ══ -->
+<section class="kinetic" id="kineticSec">
+  <div class="k-t k-left">ANALYZE · IMPROVE · DOMINATE · REPEAT ·</div>
+  <div class="k-t kl k-right">GET HIRED · GET HIRED · GET HIRED ·</div>
+  <div class="k-t k-left">SKILL UP · STAND OUT · LEVEL UP · WIN ·</div>
+  <div class="k-t kg k-right">YOUR MOMENT IS NOW · YOUR MOMENT IS NOW ·</div>
+</section>
+
+<!-- ══ STATS ══ -->
+<div class="stats" id="statsSec">
+  <div class="stat">
+    <div class="st-num" data-val="94">94%</div>
+    <div class="st-lbl">Match Accuracy</div>
+  </div>
+  <div class="stat">
+    <div class="st-num" data-val="12">12K+</div>
+    <div class="st-lbl">Resumes Analyzed</div>
+  </div>
+  <div class="stat">
+    <div class="st-num" data-val="3">3s</div>
+    <div class="st-lbl">Average Analysis Time</div>
+  </div>
+  <div class="stat">
+    <div class="st-num" data-val="87">87%</div>
+    <div class="st-lbl">Interview Rate Boost</div>
+  </div>
+</div>
+
+<!-- ══ UPLOAD SECTION (THE APP) ══ -->
+<section class="upload-sec" id="appSec">
+  <div class="upload-inner">
+    <div class="up-eyebrow reveal">Drop Your Resume</div>
+    <h2 class="up-title reveal">Start Your<br><span>Analysis.</span></h2>
+
+    <div class="upload-zone reveal" id="uploadZone">
+      <input type="file" id="fileInput" accept=".pdf,image/*">
+      <span class="uz-icon">📎</span>
+      <div class="uz-title">Drop your resume here</div>
+      <div class="uz-sub">Supports PDF and image files (JPG, PNG, WEBP)</div>
+      <div class="uz-btn">Choose File</div>
+    </div>
+
+    <div class="proc-loader" id="procLoader">
+      <div class="proc-spinner"></div>
+      <div class="proc-status" id="procStatus">Processing...</div>
+    </div>
+
+    <textarea class="resume-box" id="resumeBox" id="resume" placeholder="Extracted resume text will appear here..."></textarea>
+
+    <div class="role-wrap">
+      <input class="role-input" id="roleInput" placeholder="Target role — e.g. Senior UX Designer at a startup" />
+    </div>
+
+    <button class="analyze-btn" id="analyzeBtn" disabled onclick="analyze()">Analyze My Resume</button>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<div id="output"></div>
+
+<!-- ══ TESTIMONIALS ══ -->
+<section class="testimonials" id="testSec">
+  <div class="test-hdr">
+    <div class="test-label reveal">What People Say</div>
+    <h2 class="test-title reveal">Real <span>Results.</span></h2>
+  </div>
+  <div class="test-grid">
+    <div class="test-card reveal">
+      <div class="test-quote">"Got a 78% match score, followed the roadmap, and landed my first product design role in 6 weeks. Insane."</div>
+      <div class="test-author">
+        <div class="test-avatar">A</div>
+        <div>
+          <div class="test-name">Arjun Mehta</div>
+          <div class="test-role">Product Designer — Bangalore</div>
+        </div>
+      </div>
+    </div>
+    <div class="test-card reveal">
+      <div class="test-quote">"The skill gap report was more honest than any HR feedback I've ever gotten. Changed how I approach job hunting completely."</div>
+      <div class="test-author">
+        <div class="test-avatar" style="background:var(--acc2);color:#fff;">S</div>
+        <div>
+          <div class="test-name">Sara Kim</div>
+          <div class="test-role">Full-Stack Dev — Seoul</div>
+        </div>
+      </div>
+    </div>
+    <div class="test-card reveal">
+      <div class="test-quote">"I was applying blindly for months. CAREERX showed me I was 40% off. Fixed it. Now I'm at my dream company."</div>
+      <div class="test-author">
+        <div class="test-avatar" style="background:rgba(255,255,255,.15);">M</div>
+        <div>
+          <div class="test-name">Marcus Osei</div>
+          <div class="test-role">Data Analyst — Lagos</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINAL CTA ══ -->
+<section class="final-cta" id="finalSec">
+  <div class="fc-glow"></div>
+  <div class="fc-label reveal">Ready?</div>
+  <h2 class="fc-title reveal">
+    <span>LAND</span>
+    <span>THE</span>
+    <span class="green">JOB.</span>
+  </h2>
+  <p class="fc-sub reveal">Upload your resume. Get the truth. Build the future.</p>
+  <button class="fc-btn reveal" onclick="document.querySelector('.upload-sec').scrollIntoView({behavior:'smooth'})">Start Free Analysis</button>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div class="ft-logo">CAREERX</div>
+  <div class="ft-copy">AI Career Intelligence — 2026 — Built for winners</div>
+</footer>
+
+<audio id="bgAudio" loop><source src="music.mp3" type="audio/mp3"></audio>
+
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+/* ══════════════════════
+   CURSOR
+══════════════════════ */
+const cur=document.getElementById('cur');
+const curRing=document.getElementById('cur-ring');
+let mx=0,my=0,rx=0,ry=0;
+window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;cur.style.left=(mx-7)+'px';cur.style.top=(my-7)+'px';});
+(function rl(){rx+=(mx-rx-22)*.11;ry+=(my-ry-22)*.11;curRing.style.left=rx+'px';curRing.style.top=ry+'px';requestAnimationFrame(rl);})();
+
+/* ══════════════════════
+   HERO CANVAS
+══════════════════════ */
+const hc=document.getElementById('hc');
+const hx=hc.getContext('2d');
+let pts=[];
+function rsz(){hc.width=window.innerWidth;hc.height=window.innerHeight;}
+rsz();window.addEventListener('resize',rsz);
+for(let i=0;i<80;i++) pts.push({x:Math.random()*window.innerWidth,y:Math.random()*window.innerHeight,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,r:Math.random()*1.4+.4});
+(function dp(){
+  hx.clearRect(0,0,hc.width,hc.height);
+  pts.forEach((p,i)=>{
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0||p.x>hc.width)p.vx*=-1;if(p.y<0||p.y>hc.height)p.vy*=-1;
+    hx.beginPath();hx.arc(p.x,p.y,p.r,0,Math.PI*2);hx.fillStyle='rgba(184,255,79,.45)';hx.fill();
+    for(let j=i+1;j<pts.length;j++){
+      const d=Math.hypot(pts[j].x-p.x,pts[j].y-p.y);
+      if(d<130){hx.beginPath();hx.moveTo(p.x,p.y);hx.lineTo(pts[j].x,pts[j].y);hx.strokeStyle=`rgba(184,255,79,${.08*(1-d/130)})`;hx.lineWidth=.5;hx.stroke();}
+    }
+  });requestAnimationFrame(dp);
+})();
+
+/* ══════════════════════
+   SCROLL LINE
+══════════════════════ */
+const sline=document.getElementById('sline');
+ScrollTrigger.create({trigger:'body',start:'top top',end:'bottom bottom',onUpdate:s=>{sline.style.height=(s.progress*100)+'%';}});
+
+/* ══════════════════════
+   LOADER
+══════════════════════ */
+const loaderTl=gsap.timeline();
+loaderTl
+  .to('#loader .ld-w:nth-child(1) span',{y:'0%',duration:1.1,ease:'power4.out',delay:.2})
+  .to('#loader .ld-w:nth-child(2) span',{y:'0%',duration:1.1,ease:'power4.out'},'-=.7')
+  .to('#lsub',{opacity:1,duration:.7,ease:'power3.out'},'-=.3')
+  .to('#ldFill',{width:'100%',duration:1.6,ease:'power2.inOut'},'-=.2')
+  .to('#ldBtn',{opacity:1,duration:.6,ease:'power3.out'},'-=.3');
+
+function launchExperience(){
+  const ld=document.getElementById('loader');
+  gsap.to(ld,{opacity:0,scale:1.04,duration:1,ease:'power3.inOut',onComplete:()=>{
+    ld.style.display='none';
+    gsap.to('#mainNav',{opacity:1,duration:.6,ease:'power3.out'});
+    gsap.to('#heroTitle',{y:'0%',duration:1.4,ease:'power4.out',delay:.1});
+    gsap.to('.h-tag',{opacity:.5,duration:1,ease:'power3.out',delay:.5});
+    gsap.to('.h-hint',{opacity:.45,duration:1,ease:'power3.out',delay:.7});
+  }});
+}
+document.getElementById('ldBtn').addEventListener('click',launchExperience);
+
+/* ══════════════════════
+   PROGRESS
+══════════════════════ */
+gsap.to('#progress',{width:'100%',ease:'none',scrollTrigger:{trigger:'body',start:'top top',end:'bottom bottom',scrub:true}});
+
+/* ══════════════════════
+   HERO PARALLAX
+══════════════════════ */
+gsap.to('#heroTitle',{y:-200,opacity:0,filter:'blur(20px)',ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
+gsap.to('.hero-mesh',{scale:1.4,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
+
+/* ══════════════════════
+   MARQUEE DIRECTION
+══════════════════════ */
+ScrollTrigger.create({trigger:'.mq',start:'top bottom',end:'bottom top',onUpdate:s=>{document.querySelector('.mq-track').style.animationDirection=s.direction===1?'normal':'reverse';}});
+
+/* ══════════════════════
+   REVEALS
+══════════════════════ */
+gsap.utils.toArray('.reveal').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:50},{opacity:1,y:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.reveal-left').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,x:-60},{opacity:1,x:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none none'}});
+});
+gsap.utils.toArray('.reveal-right').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,x:60},{opacity:1,x:0,duration:1,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 88%',toggleActions:'play none none none'}});
+});
+
+/* ══════════════════════
+   KINETIC SCROLL
+══════════════════════ */
+gsap.to('.k-left',{xPercent:-18,ease:'none',scrollTrigger:{trigger:'#kineticSec',start:'top bottom',end:'bottom top',scrub:1}});
+gsap.to('.k-right',{xPercent:18,ease:'none',scrollTrigger:{trigger:'#kineticSec',start:'top bottom',end:'bottom top',scrub:1}});
+
+/* ══════════════════════
+   STATS (static — no counter anim needed for text+% mix)
+══════════════════════ */
+gsap.utils.toArray('.stat').forEach(el=>{
+  gsap.fromTo(el,{opacity:0,y:30},{opacity:1,y:0,duration:.9,ease:'power3.out',scrollTrigger:{trigger:el,start:'top 85%',toggleActions:'play none none none'}});
+});
+
+/* ══════════════════════
+   FEAT CARDS STAGGER
+══════════════════════ */
+gsap.utils.toArray('.feat-card').forEach((card,i)=>{
+  gsap.fromTo(card,{opacity:0,y:60},{opacity:1,y:0,duration:1,ease:'power4.out',delay:i*.08,scrollTrigger:{trigger:card,start:'top 90%',toggleActions:'play none none none'}});
+});
+
+/* ══════════════════════
+   STEP STAGGER
+══════════════════════ */
+gsap.utils.toArray('.step').forEach((s,i)=>{
+  gsap.fromTo(s,{opacity:0,y:40},{opacity:1,y:0,duration:.9,ease:'power3.out',delay:i*.12,scrollTrigger:{trigger:s,start:'top 88%',toggleActions:'play none none none'}});
+});
+
+/* ══════════════════════
+   TEST CARDS
+══════════════════════ */
+gsap.utils.toArray('.test-card').forEach((c,i)=>{
+  gsap.fromTo(c,{opacity:0,y:50},{opacity:1,y:0,duration:1,ease:'power3.out',delay:i*.1,scrollTrigger:{trigger:c,start:'top 88%',toggleActions:'play none none none'}});
+});
+
+/* ══════════════════════
+   BG WORD PARALLAX
+══════════════════════ */
+gsap.to('.bg-word',{y:180,ease:'none',scrollTrigger:{trigger:'.what',start:'top bottom',end:'bottom top',scrub:true}});
+
+/* ══════════════════════
+   FINAL TITLE
+══════════════════════ */
+gsap.fromTo('.fc-title',{opacity:0,scale:.9},{opacity:1,scale:1,duration:1.4,ease:'power4.out',scrollTrigger:{trigger:'.final-cta',start:'top 70%',toggleActions:'play none none none'}});
+
+window.addEventListener('resize',()=>ScrollTrigger.refresh());
+setTimeout(()=>ScrollTrigger.refresh(),500);
+document.querySelectorAll('img').forEach(img=>img.setAttribute('draggable','false'));
+
+/* ═══════════════════════════════════════
+   RESUME APP LOGIC
+═══════════════════════════════════════ */
+const API_URL = "";
+const fileInput = document.getElementById("fileInput");
+const procLoader = document.getElementById("procLoader");
+const procStatus = document.getElementById("procStatus");
+const resumeBox = document.getElementById("resumeBox");
+const roleInput = document.getElementById("roleInput");
+const analyzeBtn = document.getElementById("analyzeBtn");
+const uploadZone = document.getElementById("uploadZone");
+
+// Drag and drop
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.classList.add('dragging');});
+uploadZone.addEventListener('dragleave',()=>uploadZone.classList.remove('dragging'));
+uploadZone.addEventListener('drop',e=>{
+  e.preventDefault();uploadZone.classList.remove('dragging');
+  const f=e.dataTransfer.files[0];if(f){processFile(f);}
+});
+
+fileInput.addEventListener("change",e=>{const f=e.target.files[0];if(f)processFile(f);});
+
+async function processFile(file){
+  procLoader.style.display='block';
+  let text='';
+  try{
+    if(file.type==='application/pdf'){
+      procStatus.innerText='Extracting PDF text...';
+      const reader=new FileReader();
+      reader.onload=async function(){
+        pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        const pdf=await pdfjsLib.getDocument(new Uint8Array(this.result)).promise;
+        for(let i=1;i<=pdf.numPages;i++){
+          const page=await pdf.getPage(i);
+          const content=await page.getTextContent();
+          text+=content.items.map(it=>it.str).join(' ')+' ';
+        }
+        finishExtraction(text);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      procStatus.innerText='Running OCR scan...';
+      const result=await Tesseract.recognize(file,'eng',{logger:m=>console.log(m)});
+      text=result.data.text;
+      finishExtraction(text);
+    }
+  } catch(err){
+    console.error(err);
+    procStatus.innerText='Extraction failed. Try again.';
+  }
+}
+
+function finishExtraction(text){
+  procLoader.style.display='none';
+  resumeBox.style.display='block';
+  roleInput.style.display='block';
+  analyzeBtn.style.display='block';
+  resumeBox.value=text;
+  analyzeBtn.disabled=false;
+  // animate them in
+  gsap.fromTo([resumeBox,roleInput,analyzeBtn],{opacity:0,y:20},{opacity:1,y:0,duration:.7,stagger:.1,ease:'power3.out'});
+}
+
+async function analyze(){
+  procLoader.style.display='block';
+  procStatus.innerText='AI is analyzing your resume...';
+  analyzeBtn.disabled=true;
+  try{
+    const res=await fetch(`${API_URL}/analyze`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({resume:resumeBox.value,role:roleInput.value})
+    });
+    const data=await res.json();
+    const score=data.total?Math.round((data.matched.length/data.total)*100):0;
+    const scoreColor=score>=70?'var(--acc)':score>=40?'#ffb44f':'var(--acc2)';
+
+    document.getElementById('output').innerHTML=`
+      <div class="result-card">
+        <div class="rc-header">
+          <div>
+            <div class="rc-score-label">Overall Match Score</div>
+            <div class="rc-score-num" style="color:${scoreColor}">${score}<span class="rc-score-pct">%</span></div>
+            <div class="rc-score-sub">${score>=70?'Strong Match — Apply Now':score>=40?'Moderate — Improve & Apply':'Weak Match — Learn First'}</div>
+          </div>
+          <div style="text-align:right;opacity:.3;font-family:'Unbounded',sans-serif;font-size:10px;letter-spacing:.3em;text-transform:uppercase;">
+            ${data.matched.length} of ${data.total} skills matched
+          </div>
+        </div>
+        <div class="rc-bar-wrap">
+          <div class="rc-bar-fill" id="rcFill"></div>
+        </div>
+        <div class="rc-body">
+          <div>
+            <div class="rc-section-title">✅ Matched Skills</div>
+            <div class="rc-tags">${data.matched.map(s=>`<span class="rc-tag match">${s}</span>`).join('')}</div>
+          </div>
+          <div>
+            <div class="rc-section-title">❌ Missing Skills</div>
+            <div class="rc-tags">${data.missing.map(s=>`<span class="rc-tag miss">${s}</span>`).join('')}</div>
+          </div>
+        </div>
+        <div class="rc-roadmap">
+          <div class="rm-title">Your Learning Roadmap</div>
+          ${data.roadmap.map(r=>`
+            <div class="rm-week">
+              <div class="rm-wnum">W${r.week}</div>
+              <div class="rm-wcontent">${r.content}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    // Animate result in
+    gsap.fromTo('.result-card',{opacity:0,y:60},{opacity:1,y:0,duration:1,ease:'power4.out'});
+    // Animate bar fill
+    setTimeout(()=>{document.getElementById('rcFill').style.width=score+'%';},300);
+
+    // Scroll to results
+    setTimeout(()=>{document.getElementById('output').scrollIntoView({behavior:'smooth',block:'start'});},400);
+
+  } catch(err){
+    console.error(err);
+    procStatus.innerText='Server error. Please try again.';
+  }
+  procLoader.style.display='none';
+  analyzeBtn.disabled=false;
+}
+</script>
+</body>
+</html>
