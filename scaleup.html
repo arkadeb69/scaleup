@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CAREERX — AI Career Intelligence</title>
+<link rel="icon" type="image/png" href="faviicon.png">
+
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -243,7 +245,9 @@ canvas#hc{position:absolute;inset:0;width:100%;height:100%;}
 /* ─── FOOTER ─── */
 footer{padding:48px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border);}
 .ft-logo{font-family:'Unbounded',sans-serif;font-weight:900;font-size:16px;color:var(--acc);}
-.ft-copy{font-size:9px;letter-spacing:.3em;opacity:.2;text-transform:uppercase;}
+.ft-ig{color:var(--wh);font-size:11px;letter-spacing:.2em;text-transform:uppercase;text-decoration:none;opacity:.5;transition:opacity .3s,color .3s;cursor:none;}
+.ft-ig:hover{opacity:1;color:var(--acc);}
+.ft-copy{font-size:9px;letter-spacing:.3em;opacity:.3;text-transform:uppercase;}
 
 /* ─── REVEAL UTIL ─── */
 .reveal{opacity:0;transform:translateY(40px);}
@@ -444,20 +448,20 @@ footer{padding:48px;display:flex;justify-content:space-between;align-items:cente
 <!-- ══ STATS ══ -->
 <div class="stats" id="statsSec">
   <div class="stat">
-    <div class="st-num" data-val="94">94%</div>
+    <div class="st-num" data-val="95">95%</div>
     <div class="st-lbl">Match Accuracy</div>
   </div>
   <div class="stat">
-    <div class="st-num" data-val="12">12K+</div>
+    <div class="st-num" data-val="42" id="resumeCount">42</div>
     <div class="st-lbl">Resumes Analyzed</div>
   </div>
   <div class="stat">
-    <div class="st-num" data-val="3">3s</div>
+    <div class="st-num" data-val="2.5">2.5s</div>
     <div class="st-lbl">Average Analysis Time</div>
   </div>
   <div class="stat">
-    <div class="st-num" data-val="87">87%</div>
-    <div class="st-lbl">Interview Rate Boost</div>
+    <div class="st-num" data-val="100">100%</div>
+    <div class="st-lbl">Privacy Maintained</div>
   </div>
 </div>
 
@@ -501,32 +505,32 @@ footer{padding:48px;display:flex;justify-content:space-between;align-items:cente
   </div>
   <div class="test-grid">
     <div class="test-card reveal">
-      <div class="test-quote">"Got a 78% match score, followed the roadmap, and landed my first product design role in 6 weeks. Insane."</div>
+      <div class="test-quote">"Got a 78% match score, improved my portfolio using the AI suggestions, and landed my first design internship within a month."</div>
       <div class="test-author">
-        <div class="test-avatar">A</div>
+        <div class="test-avatar">R</div>
         <div>
-          <div class="test-name">Arjun Mehta</div>
-          <div class="test-role">Product Designer — Bangalore</div>
+          <div class="test-name">Ritwik Sen</div>
+          <div class="test-role">UI/UX Designer — Cooch Behar</div>
         </div>
       </div>
     </div>
     <div class="test-card reveal">
-      <div class="test-quote">"The skill gap report was more honest than any HR feedback I've ever gotten. Changed how I approach job hunting completely."</div>
+      <div class="test-quote">"The skill-gap analysis showed exactly what I was missing for frontend roles. Fixed my projects and finally started getting interview calls."</div>
       <div class="test-author">
-        <div class="test-avatar" style="background:var(--acc2);color:#fff;">S</div>
+        <div class="test-avatar" style="background:var(--acc2);color:#fff;">A</div>
         <div>
-          <div class="test-name">Sara Kim</div>
-          <div class="test-role">Full-Stack Dev — Seoul</div>
+          <div class="test-name">Ayan Chatterjee</div>
+          <div class="test-role">Frontend Developer — Kolkata</div>
         </div>
       </div>
     </div>
     <div class="test-card reveal">
-      <div class="test-quote">"I was applying blindly for months. CAREERX showed me I was 40% off. Fixed it. Now I'm at my dream company."</div>
+      <div class="test-quote">"I was applying randomly for months. CAREERX helped optimize my resume and target the right jobs. Huge difference."</div>
       <div class="test-author">
-        <div class="test-avatar" style="background:rgba(255,255,255,.15);">M</div>
+        <div class="test-avatar" style="background:rgba(255,255,255,.15);">S</div>
         <div>
-          <div class="test-name">Marcus Osei</div>
-          <div class="test-role">Data Analyst — Lagos</div>
+          <div class="test-name">Sourav Das</div>
+          <div class="test-role">Video Editor — Siliguri</div>
         </div>
       </div>
     </div>
@@ -549,7 +553,8 @@ footer{padding:48px;display:flex;justify-content:space-between;align-items:cente
 <!-- ══ FOOTER ══ -->
 <footer>
   <div class="ft-logo">CAREERX</div>
-  <div class="ft-copy">AI Career Intelligence — 2026 — Built for winners</div>
+  <a href="https://www.instagram.com/careerx.online/" target="_blank" class="ft-ig">Instagram ↗</a>
+  <div class="ft-copy">Made with <span style="color:var(--acc2);font-size:11px;">❤</span> Destructive Antagonsit</div>
 </footer>
 
 <audio id="bgAudio" loop><source src="music.mp3" type="audio/mp3"></audio>
@@ -782,6 +787,10 @@ async function analyze(){
     
     const score=total?Math.round((matched.length/total)*100):0;
     const scoreColor=score>=70?'var(--acc)':score>=40?'#ffb44f':'var(--acc2)';
+
+    // Increment local stat counter
+    const rcEl = document.getElementById('resumeCount');
+    if(rcEl) rcEl.innerText = parseInt(rcEl.innerText) + 1;
 
     document.getElementById('output').innerHTML=`
       <div class="result-card">
