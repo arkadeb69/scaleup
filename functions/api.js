@@ -16,7 +16,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: "*" }));
 
-app.post("/.netlify/functions/api", async (req, res) => {
+app.post("/.netlify/functions/api/analyze", async (req, res) => {
   let { resume, role } = req.body;
 
   if (!resume || !role) {
