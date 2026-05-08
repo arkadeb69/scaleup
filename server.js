@@ -51,10 +51,30 @@ Make sure the output is pure JSON. Do not include markdown formatting like \`\`\
         contents: prompt,
         config: {
             responseMimeType: "application/json",
+            responseSchema: {
+                type: "OBJECT",
+                properties: {
+                    matched: { type: "ARRAY", items: { type: "STRING" } },
+                    missing: { type: "ARRAY", items: { type: "STRING" } },
+                    roadmap: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                week: { type: "INTEGER" },
+                                content: { type: "STRING" }
+                            }
+                        }
+                    },
+                    total: { type: "INTEGER" }
+                },
+                required: ["matched", "missing", "roadmap", "total"]
+            }
         }
     });
 
-    const resultText = response.text;
+    let resultText = response.text;
+    resultText = resultText.replace(/```json/gi, '').replace(/```/g, '').trim();
     const data = JSON.parse(resultText);
     
     res.json(data);
