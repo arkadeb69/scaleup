@@ -1,22 +1,23 @@
 const express = require("express");
 const cors = require("cors");
-const serverless = require("serverless-http");
+const path = require("path");
+require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 
 const app = express();
-
-// Inside Netlify, env vars are injected from Netlify UI settings automatically.
-// We only need dotenv for local testing via netlify dev if we are using it.
-if (process.env.NODE_ENV !== 'production') {
-  require("dotenv").config();
-}
-
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.use(express.json({ limit: "10mb" }));
 app.use(cors({ origin: "*" }));
 
-app.post("/.netlify/functions/api/analyze", async (req, res) => {
+// Serve static files from the current directory
+app.use(express.static(path.join(__dirname)));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "scaleup.html"));
+});
+
+app.post("/analyze", async (req, res) => {
   let { resume, role } = req.body;
 
   if (!resume || !role) {
@@ -63,4 +64,5 @@ Make sure the output is pure JSON. Do not include markdown formatting like \`\`\
   }
 });
 
-module.exports.handler = serverless(app);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("Server running on http://localhost:" + PORT));
