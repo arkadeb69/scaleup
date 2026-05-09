@@ -51,6 +51,7 @@ Make sure the output is pure JSON. Do not include markdown formatting like \`\`\
         model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
+            temperature: 0,
             responseMimeType: "application/json",
             responseSchema: {
                 type: "OBJECT",
