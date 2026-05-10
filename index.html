@@ -714,7 +714,18 @@ document.querySelectorAll('img').forEach(img=>img.setAttribute('draggable','fals
 /* ═══════════════════════════════════════
    RESUME APP LOGIC
 ═══════════════════════════════════════ */
-const API_URL = "/api";
+const API_URL = "/api/v1";
+const escapeHTML = (str) => {
+  return String(str).replace(/[&<>'"]/g, 
+    tag => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      "'": '&#39;',
+      '"': '&quot;'
+    }[tag])
+  );
+};
 const fileInput = document.getElementById("fileInput");
 const procLoader = document.getElementById("procLoader");
 const procStatus = document.getElementById("procStatus");
@@ -822,19 +833,19 @@ async function analyze(){
         <div class="rc-body">
           <div>
             <div class="rc-section-title">✅ Matched Skills</div>
-            <div class="rc-tags">${matched.map(s=>`<span class="rc-tag match">${s}</span>`).join('')}</div>
+            <div class="rc-tags">${matched.map(s=>`<span class="rc-tag match">${escapeHTML(s)}</span>`).join('')}</div>
           </div>
           <div>
             <div class="rc-section-title">❌ Missing Skills</div>
-            <div class="rc-tags">${missing.map(s=>`<span class="rc-tag miss">${s}</span>`).join('')}</div>
+            <div class="rc-tags">${missing.map(s=>`<span class="rc-tag miss">${escapeHTML(s)}</span>`).join('')}</div>
           </div>
         </div>
         <div class="rc-roadmap">
           <div class="rm-title">Your Learning Roadmap</div>
           ${roadmap.map(r=>`
             <div class="rm-week">
-              <div class="rm-wnum">W${r.week}</div>
-              <div class="rm-wcontent">${r.content}</div>
+              <div class="rm-wnum">W${escapeHTML(r.week)}</div>
+              <div class="rm-wcontent">${escapeHTML(r.content)}</div>
             </div>
           `).join('')}
         </div>

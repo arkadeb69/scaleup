@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
+const rateLimit = require("express-rate-limit");
 
 const app = express();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -13,11 +14,17 @@ app.use(cors({ origin: "*" }));
 // Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 
+const analyzeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 requests per windowMs
+  message: { error: "Too many requests from this IP, please try again after 15 minutes" }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.post("/api/analyze", async (req, res) => {
+app.post("/api/v1/analyze", analyzeLimiter, async (req, res) => {
   let { resume, role } = req.body;
 
   if (!resume || !role) {
