@@ -110,6 +110,84 @@ Make sure the output is pure JSON. Do not include markdown formatting like \`\`\
   }
 });
 
+app.post("/api/v1/feedback", async (req, res) => {
+  const { name, email, device, browser, issues, description, severity, refreshFix, contact, suggestions } = req.body;
+
+  if (!name || !email || !description) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (!resendApiKey) {
+    console.error("Missing RESEND_API_KEY");
+    return res.status(500).json({ error: "Email configuration error" });
+  }
+
+  // 1. Email to the user
+  const userEmailHtml = `<p>Hi ${name},</p>
+<p>Thank you for taking the time to share your feedback with Resume X AI.</p>
+<p>We've successfully received your report and our team will review the issue carefully. Your input helps us improve the accuracy, reliability, and overall experience of the platform.</p>
+<p>If additional details are required, we may contact you through this email address.</p>
+<p>We appreciate your support and patience while we continue improving Resume X AI for everyone.</p>
+<br>
+<p>Best regards,<br>Arkadeb Thokdar</p>`;
+
+  // 2. Email to the admin
+  const adminEmailHtml = `<h2>New Feedback Received</h2>
+<p><strong>Name:</strong> ${name}</p>
+<p><strong>Email:</strong> ${email}</p>
+<p><strong>Device:</strong> ${device}</p>
+<p><strong>Browser:</strong> ${browser}</p>
+<p><strong>Issues:</strong> ${Array.isArray(issues) ? issues.join(", ") : issues}</p>
+<p><strong>Severity:</strong> ${severity}/5</p>
+<p><strong>Refresh Fixed It:</strong> ${refreshFix}</p>
+<p><strong>Contact Allowed:</strong> ${contact}</p>
+<hr>
+<h3>Description:</h3>
+<p>${description}</p>
+<hr>
+<h3>Suggestions:</h3>
+<p>${suggestions || "None"}</p>`;
+
+  try {
+    // Send to User
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Resume X AI <contact@resumexai.online>',
+        to: [email],
+        subject: "We've Received Your Feedback — Resume X AI",
+        html: userEmailHtml
+      })
+    });
+
+    // Send to Admin
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Resume X AI System <contact@resumexai.online>',
+        to: ['contact@resumexai.online'],
+        subject: `New Issue Report: ${severity}/5 Severity`,
+        html: adminEmailHtml
+      })
+    });
+
+    res.json({ success: true, message: "Feedback submitted successfully" });
+  } catch (error) {
+    console.error("Error sending feedback email:", error);
+    res.status(500).json({ error: "Failed to send feedback" });
+  }
+});
+
+
 const PORT = process.env.PORT || 3000;
 if (process.env.NODE_ENV !== 'production') {
   app.listen(PORT, () => console.log("Server running on http://localhost:" + PORT));
