@@ -9,8 +9,25 @@ const app = express();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 app.use(express.json({ limit: "10mb" }));
-app.use(cors({ origin: "*" }));
 
+const allowedOrigins = [
+  'https://resumexai.online', 
+  'https://www.resumexai.online', 
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like server-to-server)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 // Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 
