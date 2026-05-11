@@ -31,6 +31,9 @@ app.use(cors({
 // Serve static files from the current directory
 app.use(express.static(path.join(__dirname)));
 
+// Serve @vercel/analytics for browser usage
+app.use('/@vercel/analytics', express.static(path.join(__dirname, 'node_modules/@vercel/analytics/dist')));
+
 const analyzeLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // limit each IP to 10 requests per windowMs
