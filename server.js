@@ -4,6 +4,7 @@ const path = require("path");
 require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 const rateLimit = require("express-rate-limit");
+const { Resend } = require("resend");
 
 const app = express();
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -150,35 +151,33 @@ app.post("/api/v1/feedback", async (req, res) => {
 <p>${suggestions || "None"}</p>`;
 
   try {
+    const resend = new Resend(resendApiKey);
+
     // Send to User
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'Resume X AI <contact@resumexai.online>',
-        to: [email],
-        subject: "We've Received Your Feedback — Resume X AI",
-        html: userEmailHtml
-      })
+    const userResult = await resend.emails.send({
+      from: 'Resume X AI <contact@resumexai.online>',
+      to: [email],
+      subject: "We've Received Your Feedback — Resume X AI",
+      html: userEmailHtml
     });
 
+    if (userResult.error) {
+      console.error("Resend User Email Error:", userResult.error);
+      throw new Error(userResult.error.message);
+    }
+
     // Send to Admin
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${resendApiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        from: 'Resume X AI System <contact@resumexai.online>',
-        to: ['contact@resumexai.online'],
-        subject: `New Issue Report: ${severity}/5 Severity`,
-        html: adminEmailHtml
-      })
+    const adminResult = await resend.emails.send({
+      from: 'Resume X AI System <contact@resumexai.online>',
+      to: ['contact@resumexai.online'],
+      subject: `New Issue Report: ${severity}/5 Severity`,
+      html: adminEmailHtml
     });
+
+    if (adminResult.error) {
+      console.error("Resend Admin Email Error:", adminResult.error);
+      throw new Error(adminResult.error.message);
+    }
 
     res.json({ success: true, message: "Feedback submitted successfully" });
   } catch (error) {
